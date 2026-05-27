@@ -20,9 +20,16 @@ class SyntheticDataset(Dataset):
     transform : torch.nn.Module, optional
         Optional transform to be applied on a sample. Default is None.
     """
-    def __init__(self, data_fname, transform: torch.nn.Module = None) -> None:
+
+    def __init__(
+        self, data_fname, transform: torch.nn.Module = None, reduced=False
+    ) -> None:
         self.data_fname = data_fname
         self.transform = transform
+        self.reduced = reduced
+        self.font_sizes = [16, 20, 24, 28, 32, 36]
+        if reduced:
+            self.font_sizes = [28, 32]
         self.fonts = self.load_fonts()
         self.data = np.load(data_fname, allow_pickle=True)["data"]
 
@@ -39,13 +46,16 @@ class SyntheticDataset(Dataset):
 
     def load_fonts(self) -> List:
         fonts = []
+        num_fonts = 0
         for name in os.listdir("fonts"):
             try:
-                font = ImageFont.truetype(os.path.join("fonts", name), size=32)
-                fonts.append(font)
+                for size in self.font_sizes:
+                    font = ImageFont.truetype(os.path.join("fonts", name), size=size)
+                    fonts.append(font)
+                num_fonts += 1
             except IOError:
                 continue
-        print(f"Loaded {len(fonts)} fonts.")
+        print(f"Loaded {num_fonts} fonts.")
         return fonts
 
     def load_image(self, idx) -> torch.Tensor:
@@ -58,10 +68,16 @@ class SyntheticDataset(Dataset):
         gt = image.copy()
 
         # blit a red i
+        num_i = random.randint(1, 3)
+        if self.reduced:
+            num_i = 1
         draw = ImageDraw.Draw(image)
-        font = random.choice(self.fonts)
-        x, y = random.randint(0, image.width - 32), random.randint(0, image.height - 32)
-        draw.text((x, y), "i", font=font, fill=(255, 0, 0))
+        for _ in range(num_i):
+            font = random.choice(self.fonts)
+            x, y = random.randint(0, image.width - 32), random.randint(
+                0, image.height - 32
+            )
+            draw.text((x, y), "i", font=font, fill=(255, 0, 0))
 
         # to tensor
         image = torch.from_numpy(np.array(image)).permute(2, 0, 1).float() / 255.0

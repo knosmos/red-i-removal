@@ -1,8 +1,8 @@
 import torch
-from sklearn.model_selection import train_test_split
 import numpy as np
 from torch.utils.data import DataLoader
 from torch.optim import Adam
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from tqdm import tqdm
 
 from synthetic_dataset import SyntheticDataset
@@ -31,6 +31,7 @@ def train_model(data_fname, batch_size=32, num_epochs=10, learning_rate=1e-3):
     model = RedIRemover().to(device)
     criterion = torch.nn.MSELoss()
     optimizer = Adam(model.parameters(), lr=learning_rate)
+    scheduler = CosineAnnealingLR(optimizer, T_max=num_epochs)
 
     best_val_loss = float("inf")
 
@@ -46,6 +47,7 @@ def train_model(data_fname, batch_size=32, num_epochs=10, learning_rate=1e-3):
             loss = criterion(outputs, targets)
             loss.backward()
             optimizer.step()
+            scheduler.step()
 
         # Validation loop
         model.eval()
@@ -98,4 +100,5 @@ def train_model(data_fname, batch_size=32, num_epochs=10, learning_rate=1e-3):
 
 
 if __name__ == "__main__":
+    torch.manual_seed(42)
     train_model("train_data_batch_1", batch_size=32, num_epochs=10, learning_rate=1e-3)

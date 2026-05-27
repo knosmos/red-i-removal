@@ -38,14 +38,15 @@ def visualize_samples(inputs, targets, outputs):
             .astype(np.uint8)
         )
         if idx == 0:
-            plt.ylabel("Output", rotation=0, labelpad=40)
+            plt.ylabel("Model Output", rotation=0, labelpad=40)
     plt.tight_layout()
     plt.savefig("outputs/visualization.png")
     plt.show()
 
 
 if __name__ == "__main__":
-    dataset = SyntheticDataset("train_data_batch_2")
+    dataset = SyntheticDataset("train_data_batch_2", reduced=True)
+    # we use reduced here since using multiple 'i's often overlap
     model = RedIRemover()
     model.load_state_dict(torch.load("outputs/best_model.pth"))
     inputs, targets, outputs = [], [], []
